@@ -170,6 +170,7 @@ Telegram Bot Interface
 ### 4.3 Notification Rules
 - Send Telegram notifications for: new signals, TP hit, SL hit, high volatility alerts, major news events
 - Respect user notification preferences from Settings
+- Send Telegram notification to all admins when a new user purchases a premium plan, including: user ID, username, subscription plan type, payment amount, payment method, transaction ID, purchase timestamp
 
 ### 4.4 Premium Subscription Logic
 - Validate payment before activating premium features
@@ -188,6 +189,7 @@ Telegram Bot Interface
 - Extract payment details: transaction ID, amount, customer email, subscription plan
 - Update user subscription status in database: set premium active, record expiry date, store transaction ID
 - Send confirmation message to user via Telegram with subscription details
+- Send notification to all admins via Telegram with new premium purchase details
 - Log payment transaction in admin Payments dashboard
 
 #### 4.4.2 PayPal Payment Processing
@@ -200,6 +202,7 @@ Telegram Bot Interface
 - Extract payment details: transaction ID, amount, payer email, subscription plan
 - Update user subscription status in database: set premium active, record expiry date, store transaction ID
 - Send confirmation message to user via Telegram with subscription details
+- Send notification to all admins via Telegram with new premium purchase details
 - Log payment transaction in admin Payments dashboard
 
 ### 4.5 Market Data Provider Logic
@@ -237,6 +240,7 @@ Telegram Bot Interface
 | Signal generation timeout | Cancel task, log timeout, retry with adjusted parameters |
 | Premium subscription expired | Disable premium features, notify user to renew |
 | Admin command from non-admin user | Deny access, log unauthorized attempt |
+| Admin notification delivery failure | Log error, retry sending notification, store failed notification for manual review |
 
 ---
 
@@ -244,8 +248,8 @@ Telegram Bot Interface
 
 1. User sends /start command and receives main menu with all navigation options displayed via inline keyboard buttons in Telegram
 2. User selects Live Signals button and views AI-generated forex signal with entry, stop loss, TP1, TP2, confidence, probability, risk score, and detailed reasoning in Telegram message
-3. User navigates to Premium menu via inline button, selects subscription plan, completes payment via Stripe, backend receives webhook, activates premium features, and sends confirmation message to user
-4. User selects PayPal payment method, completes payment, backend receives PayPal webhook, activates premium features, and logs transaction in admin Payments dashboard
+3. User navigates to Premium menu via inline button, selects subscription plan, completes payment via Stripe, backend receives webhook, activates premium features, sends confirmation message to user, and sends notification to all admins with purchase details
+4. User selects PayPal payment method, completes payment, backend receives PayPal webhook, activates premium features, logs transaction in admin Payments dashboard, and sends notification to all admins with purchase details
 5. Admin sends /admin command, accesses admin dashboard via inline keyboard, and views user statistics, revenue analytics, and API health status in Telegram messages
 6. System generates new signal during London-New York session overlap, sends Telegram notification to subscribed users, and logs signal in backend database
 

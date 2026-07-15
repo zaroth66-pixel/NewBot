@@ -6,7 +6,8 @@ from datetime import datetime, timedelta
 
 from app.core.config import settings
 from app.db.session import get_db
-from app.db.models import User, Payment, SubscriptionPlan
+from telegram import Bot
+from app.db.models import User, Payment, SubscriptionPlan, UserRole
 from app.bot import run_bot
 
 logger = logging.getLogger(__name__)
@@ -82,5 +83,49 @@ async def activate_premium(db: AsyncSession, user_id: int, plan_str: str, amount
     await db.commit()
     logger.info(f"Activated {plan} premium for user {user_id}")
     
-    # In a real app, notify the user via Telegram here
-    # await notify_user_premium_activated(user.telegram_id, plan)
+    # Notify admins about the new premium purchase
+    try:
+        if settings.TELEGRAM_BOT_TOKEN:
+            bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
+            
+            # Find all admins
+            admins_result = await db.execute(select(User).filter(User.role == UserRole.ADMIN))
+            admins = admins_result.scalars().all()
+            
+            username_display = f"@{user.username}" if user.username else "Unknown"
+            
+            admin_message = (
+                f"🚨 *New Premium Subscription!*\n\n"
+                f"👤 User: {username_display} (ID: {user.telegram_id})\n"
+                f"💎 Plan: {plan.value}\n"
+                f"💰 Amount: ${amount:.2f}\n"
+                f"💳 Provider: {provider.capitalize()}\n"
+                f"🔑 Transaction ID: {transaction_id}\n"
+            )
+            
+            for admin in admins:
+                try:
+                    await bot.send_message(
+                        chat_id=admin.telegram_id, 
+                        text=admin_message,
+                        parse_mode="Markdown"
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to notify admin {admin.telegram_id}: {str(e)}")
+                    
+            # Notify user
+            user_message = (
+                f"🎉 *Thank you for your purchase!*\n\n"
+                f"Your {plan.value} premium subscription has been successfully activated.\n"
+                f"Enjoy your advanced features and exclusive signals!"
+            )
+            try:
+                await bot.send_message(
+                    chat_id=user.telegram_id,
+                    text=user_message,
+                    parse_mode="Markdown"
+                )
+            except Exception as e:
+                logger.error(f"Failed to notify user {user.telegram_id}: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error sending notifications: {str(e)}")
