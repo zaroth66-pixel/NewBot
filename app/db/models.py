@@ -91,3 +91,18 @@ class PortfolioTrade(Base):
 
     user = relationship("User", back_populates="portfolio")
     signal = relationship("Signal")
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    amount = Column(Float, nullable=False)
+    currency = Column(String, default="USD")
+    provider = Column(String, nullable=False) # "stripe" or "paypal"
+    transaction_id = Column(String, unique=True, index=True)
+    plan = Column(Enum(SubscriptionPlan), nullable=False)
+    status = Column(String, default="COMPLETED")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", backref="payments")

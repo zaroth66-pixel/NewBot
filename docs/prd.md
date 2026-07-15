@@ -178,6 +178,30 @@ Telegram Bot Interface
 - Automatically expire premium access when subscription ends
 - Allow coupon codes for discounts
 
+#### 4.4.1 Stripe Payment Processing
+- User selects Stripe payment method via inline keyboard
+- Backend creates Stripe Checkout Session with subscription plan details (amount, currency, duration)
+- Send Stripe payment link to user via Telegram message
+- User completes payment on Stripe hosted page
+- Backend receives Stripe webhook notification (checkout.session.completed event)
+- Verify webhook signature using Stripe webhook secret
+- Extract payment details: transaction ID, amount, customer email, subscription plan
+- Update user subscription status in database: set premium active, record expiry date, store transaction ID
+- Send confirmation message to user via Telegram with subscription details
+- Log payment transaction in admin Payments dashboard
+
+#### 4.4.2 PayPal Payment Processing
+- User selects PayPal payment method via inline keyboard
+- Backend creates PayPal order with subscription plan details (amount, currency, duration)
+- Send PayPal payment link to user via Telegram message
+- User completes payment on PayPal page
+- Backend receives PayPal webhook notification (PAYMENT.SALE.COMPLETED event)
+- Verify webhook signature using PayPal webhook ID
+- Extract payment details: transaction ID, amount, payer email, subscription plan
+- Update user subscription status in database: set premium active, record expiry date, store transaction ID
+- Send confirmation message to user via Telegram with subscription details
+- Log payment transaction in admin Payments dashboard
+
 ### 4.5 Market Data Provider Logic
 - Support providers: TwelveData, Finnhub, Polygon, AlphaVantage, ForexRateAPI
 - Fetch real-time and historical market data
@@ -204,6 +228,9 @@ Telegram Bot Interface
 | Market data provider unavailable | Switch to fallback provider, log incident |
 | Invalid user input | Display error message in Telegram, prompt correction |
 | Payment processing failure | Notify user via Telegram message, log transaction, provide retry option |
+| Stripe webhook verification failure | Reject webhook, log security event, do not activate subscription |
+| PayPal webhook verification failure | Reject webhook, log security event, do not activate subscription |
+| Duplicate payment notification | Check transaction ID in database, ignore duplicate, prevent double activation |
 | Database connection loss | Retry connection, queue operations, alert admin |
 | Webhook verification failure | Reject request, log security event |
 | Rate limit exceeded | Return rate limit error message, block requests temporarily |
@@ -217,9 +244,10 @@ Telegram Bot Interface
 
 1. User sends /start command and receives main menu with all navigation options displayed via inline keyboard buttons in Telegram
 2. User selects Live Signals button and views AI-generated forex signal with entry, stop loss, TP1, TP2, confidence, probability, risk score, and detailed reasoning in Telegram message
-3. User navigates to Premium menu via inline button, selects subscription plan, completes payment via Stripe, and premium features are activated
-4. Admin sends /admin command, accesses admin dashboard via inline keyboard, and views user statistics, revenue analytics, and API health status in Telegram messages
-5. System generates new signal during London-New York session overlap, sends Telegram notification to subscribed users, and logs signal in backend database
+3. User navigates to Premium menu via inline button, selects subscription plan, completes payment via Stripe, backend receives webhook, activates premium features, and sends confirmation message to user
+4. User selects PayPal payment method, completes payment, backend receives PayPal webhook, activates premium features, and logs transaction in admin Payments dashboard
+5. Admin sends /admin command, accesses admin dashboard via inline keyboard, and views user statistics, revenue analytics, and API health status in Telegram messages
+6. System generates new signal during London-New York session overlap, sends Telegram notification to subscribed users, and logs signal in backend database
 
 ---
 

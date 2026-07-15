@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from contextlib import asynccontextmanager
 from app.core.config import settings
-from app.core.scheduler import start_scheduler
+from app.db.session import get_db
+from app.api.webhooks import router as webhooks_router
 
 import logging
 
@@ -22,6 +23,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+app.include_router(webhooks_router, prefix="/api/webhooks", tags=["webhooks"])
 
 @app.get("/")
 async def root():

@@ -1,5 +1,36 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
+def get_premium_plans_keyboard():
+    keyboard = [
+        [
+            InlineKeyboardButton("🥉 Monthly ($19.99)", callback_data="buy_MONTHLY")
+        ],
+        [
+            InlineKeyboardButton("🥈 Quarterly ($49.99)", callback_data="buy_QUARTERLY")
+        ],
+        [
+            InlineKeyboardButton("🥇 Yearly ($149.99)", callback_data="buy_YEARLY")
+        ],
+        [
+            InlineKeyboardButton("💎 Lifetime ($499.99)", callback_data="buy_LIFETIME")
+        ],
+        [
+            InlineKeyboardButton("⬅️ Back", callback_data="main_menu")
+        ]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_payment_methods_keyboard(plan: str, payment_url: str):
+    keyboard = [
+        [
+            InlineKeyboardButton(f"💳 Pay with Card (Stripe)", url=payment_url)
+        ],
+        [
+            InlineKeyboardButton("⬅️ Back to Plans", callback_data="premium")
+        ]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
 def get_main_menu_keyboard():
     keyboard = [
         [
