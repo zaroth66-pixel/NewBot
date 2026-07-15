@@ -1,3 +1,5 @@
+import pandas as pd
+import pandas_ta as ta
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
@@ -12,6 +14,44 @@ class TradingLogic:
     def __init__(self):
         self.timeframes = ["1min", "5min", "15min", "30min", "1h", "4h", "1day"]
         
+    def _calculate_indicators(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            values = data.get("values", [])
+            if not values:
+                return {}
+                
+            # TwelveData returns newest first, so we reverse it for pandas
+            df = pd.DataFrame(values[::-1])
+            df['datetime'] = pd.to_datetime(df['datetime'])
+            for col in ['open', 'high', 'low', 'close', 'volume']:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col])
+                else:
+                    df[col] = 0.0 # fallback if no volume
+            
+            # Set index
+            df.set_index('datetime', inplace=True)
+            
+            # Calculate Indicators
+            df.ta.ema(length=20, append=True)
+            df.ta.ema(length=50, append=True)
+            df.ta.ema(length=200, append=True)
+            df.ta.rsi(length=14, append=True)
+            df.ta.macd(fast=12, slow=26, signal=9, append=True)
+            df.ta.adx(length=14, append=True)
+            df.ta.atr(length=14, append=True)
+            df.ta.bbands(length=20, std=2, append=True)
+            df.ta.stoch(append=True)
+            
+            # Get the latest row
+            latest = df.iloc[-1].to_dict()
+            
+            # Convert timestamp to string if needed or remove it
+            return {k: v for k, v in latest.items() if pd.notna(v)}
+        except Exception as e:
+            logger.error(f"Error calculating indicators: {str(e)}")
+            return {}
+
     async def analyze_and_generate_signal(self, symbol: str) -> Optional[Dict[str, Any]]:
         try:
             # 1. Fetch market data for multiple timeframes
@@ -19,9 +59,8 @@ class TradingLogic:
             for tf in self.timeframes:
                 data = await market_data_provider.get_market_data(symbol, tf)
                 if data:
-                    # In a real scenario, calculate indicators (EMA, RSI, MACD, etc.) here
-                    # For this template, we pass raw data or a summary to the AI
-                    market_data_summary[tf] = data.get("values", [])[:5] # Keep it small for the prompt
+                    indicators = self._calculate_indicators(data)
+                    market_data_summary[tf] = indicators
             
             if not market_data_summary:
                 logger.error(f"No market data retrieved for {symbol}")
@@ -30,8 +69,7 @@ class TradingLogic:
             # 2. Get AI Analysis via Groq
             groq_analysis = await ai_provider.analyze_market_groq(market_data_summary, "multi-timeframe")
             
-            # 3. Parse Groq response to structured data (Simulated parsing here)
-            # A real implementation would ask Groq for JSON output or use a parser
+            # 3. Parse Groq response to structured data
             signal_data = self._parse_ai_response(groq_analysis)
             
             if not signal_data or signal_data.get("direction") == SignalDirection.NO_TRADE:

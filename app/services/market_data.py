@@ -34,11 +34,20 @@ class MarketDataProvider:
             logger.warning("TwelveData API key not set")
             return None
             
-        url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval={interval}&apikey={api_key}"
+        url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval={interval}&apikey={api_key}&outputsize=100"
         async with httpx.AsyncClient() as client:
-            response = await client.get(url)
-            response.raise_for_status()
-            return response.json()
+            try:
+                response = await client.get(url)
+                response.raise_for_status()
+                data = response.json()
+                if "values" in data:
+                    return data
+                else:
+                    logger.error(f"TwelveData Error: {data}")
+                    return None
+            except Exception as e:
+                logger.error(f"Error fetching from TwelveData: {str(e)}")
+                return None
 
     async def _fetch_finnhub(self, symbol: str, interval: str) -> Optional[Dict[str, Any]]:
         # Implement finnhub specific logic

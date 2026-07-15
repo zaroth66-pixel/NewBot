@@ -83,6 +83,9 @@ Telegram Bot Interface
 - Select timeframes and currency pairs via inline keyboard
 - Display scan results in message format: signal strength, recommended actions
 - Show multiple opportunities in single message or paginated messages
+- Background task fetches market data and calculates technical indicators: EMA 20/50/200, RSI, MACD, ADX, ATR, Bollinger Bands, VWAP, Stochastic
+- Store generated signals in database with timestamp, currency pair, timeframe, indicator values, signal direction
+- Send Telegram notification to users when new signals are generated
 
 #### 3.2.5 Trading Sessions
 - Display current active session (Sydney, Tokyo, London, New York) in message
@@ -161,25 +164,33 @@ Telegram Bot Interface
 - Output BUY, SELL, or NO TRADE
 - Calculate entry price, stop loss, TP1, TP2, confidence level, probability, risk score, risk/reward ratio, trade duration
 
-### 4.2 Trading Session Detection
+### 4.2 Market Scanner Background Task Logic
+- Fetch real-time market data from market data providers
+- Calculate technical indicators from fetched data: EMA 20/50/200, RSI, MACD, ADX, ATR, Bollinger Bands, VWAP, Stochastic
+- Analyze indicator values to generate trading signals
+- Store generated signals in database with fields: signal ID, timestamp, currency pair, timeframe, indicator values, signal direction (BUY/SELL/NO TRADE), entry price, stop loss, TP1, TP2, confidence level
+- Send Telegram notification to users based on notification preferences in Settings
+- Run background task periodically using Celery scheduler
+
+### 4.3 Trading Session Detection
 - Use Africa/Addis_Ababa timezone (UTC+3)
 - Detect active sessions: Sydney, Tokyo, London, New York
 - Identify session overlap periods
 - Increase scan frequency during high-liquidity overlaps
 
-### 4.3 Notification Rules
+### 4.4 Notification Rules
 - Send Telegram notifications for: new signals, TP hit, SL hit, high volatility alerts, major news events
 - Respect user notification preferences from Settings
 - Send Telegram notification to all admins when a new user purchases a premium plan, including: user ID, username, subscription plan type, payment amount, payment method, transaction ID, purchase timestamp
 
-### 4.4 Premium Subscription Logic
+### 4.5 Premium Subscription Logic
 - Validate payment before activating premium features
 - Support payment methods: Stripe, PayPal, Telegram Stars, USDT, BTC, ETH
 - Apply subscription duration: Monthly, Quarterly, Yearly, Lifetime
 - Automatically expire premium access when subscription ends
 - Allow coupon codes for discounts
 
-#### 4.4.1 Stripe Payment Processing
+#### 4.5.1 Stripe Payment Processing
 - User selects Stripe payment method via inline keyboard
 - Backend creates Stripe Checkout Session with subscription plan details (amount, currency, duration)
 - Send Stripe payment link to user via Telegram message
@@ -192,7 +203,7 @@ Telegram Bot Interface
 - Send notification to all admins via Telegram with new premium purchase details
 - Log payment transaction in admin Payments dashboard
 
-#### 4.4.2 PayPal Payment Processing
+#### 4.5.2 PayPal Payment Processing
 - User selects PayPal payment method via inline keyboard
 - Backend creates PayPal order with subscription plan details (amount, currency, duration)
 - Send PayPal payment link to user via Telegram message
@@ -205,18 +216,18 @@ Telegram Bot Interface
 - Send notification to all admins via Telegram with new premium purchase details
 - Log payment transaction in admin Payments dashboard
 
-### 4.5 Market Data Provider Logic
+### 4.6 Market Data Provider Logic
 - Support providers: TwelveData, Finnhub, Polygon, AlphaVantage, ForexRateAPI
 - Fetch real-time and historical market data
 - Handle provider API failures with fallback mechanisms
 
-### 4.6 Security and Authentication
+### 4.7 Security and Authentication
 - Verify Telegram webhook signatures
 - Implement role-based access control for admin features
 - Apply rate limiting to prevent abuse
 - Store API keys (GROQ_API_KEY, GEMINI_API_KEY) in environment variables only
 
-### 4.7 Background Task Processing
+### 4.8 Background Task Processing
 - Use Celery for asynchronous tasks: signal generation, market scanning, notification delivery
 - Schedule periodic tasks: session detection, news updates, economic calendar refresh
 - Store task results in Redis for caching
@@ -241,6 +252,10 @@ Telegram Bot Interface
 | Premium subscription expired | Disable premium features, notify user to renew |
 | Admin command from non-admin user | Deny access, log unauthorized attempt |
 | Admin notification delivery failure | Log error, retry sending notification, store failed notification for manual review |
+| Market scanner background task failure | Log error, retry task, notify admin if persistent |
+| Technical indicator calculation error | Log error with market data details, skip signal generation, retry next cycle |
+| Database storage failure for signals | Log error, queue signal for retry, alert admin |
+| Telegram notification delivery failure | Log error, retry sending, store failed notification for manual review |
 
 ---
 
@@ -252,6 +267,7 @@ Telegram Bot Interface
 4. User selects PayPal payment method, completes payment, backend receives PayPal webhook, activates premium features, logs transaction in admin Payments dashboard, and sends notification to all admins with purchase details
 5. Admin sends /admin command, accesses admin dashboard via inline keyboard, and views user statistics, revenue analytics, and API health status in Telegram messages
 6. System generates new signal during London-New York session overlap, sends Telegram notification to subscribed users, and logs signal in backend database
+7. Market scanner background task fetches market data, calculates EMA, RSI, MACD, and other technical indicators, stores generated signals in database, and sends Telegram notification to users based on notification preferences
 
 ---
 
