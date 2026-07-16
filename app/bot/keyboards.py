@@ -1,7 +1,59 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 
+def get_currency_pairs_keyboard():
+
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "🇪🇺 EUR/USD",
+                callback_data="analyze_EURUSD"
+            ),
+            InlineKeyboardButton(
+                "🇬🇧 GBP/USD",
+                callback_data="analyze_GBPUSD"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "🇯🇵 USD/JPY",
+                callback_data="analyze_USDJPY"
+            ),
+            InlineKeyboardButton(
+                "🇦🇺 AUD/USD",
+                callback_data="analyze_AUDUSD"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "🇨🇦 USD/CAD",
+                callback_data="analyze_USDCAD"
+            ),
+            InlineKeyboardButton(
+                "🇨🇭 USD/CHF",
+                callback_data="analyze_USDCHF"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "🇳🇿 NZD/USD",
+                callback_data="analyze_NZDUSD"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "⬅️ Back",
+                callback_data="main_menu"
+            )
+        ]
+    ]
+
+    return InlineKeyboardMarkup(keyboard)
+
+
+
 def get_premium_plans_keyboard():
+
     keyboard = [
         [
             InlineKeyboardButton(
@@ -38,7 +90,9 @@ def get_premium_plans_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_payment_methods_keyboard(plan: str, payment_url: str):
+
+def get_payment_methods_keyboard(plan, payment_url):
+
     keyboard = [
         [
             InlineKeyboardButton(
@@ -48,7 +102,7 @@ def get_payment_methods_keyboard(plan: str, payment_url: str):
         ],
         [
             InlineKeyboardButton(
-                "⬅️ Back to Plans",
+                "⬅️ Back",
                 callback_data="premium"
             )
         ]
@@ -57,8 +111,11 @@ def get_payment_methods_keyboard(plan: str, payment_url: str):
     return InlineKeyboardMarkup(keyboard)
 
 
+
 def get_main_menu_keyboard():
+
     keyboard = [
+
         [
             InlineKeyboardButton(
                 "📈 Live Signals",
@@ -69,6 +126,7 @@ def get_main_menu_keyboard():
                 callback_data="ai_analysis"
             )
         ],
+
         [
             InlineKeyboardButton(
                 "🔍 Market Scanner",
@@ -79,6 +137,7 @@ def get_main_menu_keyboard():
                 callback_data="trading_sessions"
             )
         ],
+
         [
             InlineKeyboardButton(
                 "📰 Forex News",
@@ -89,6 +148,7 @@ def get_main_menu_keyboard():
                 callback_data="economic_calendar"
             )
         ],
+
         [
             InlineKeyboardButton(
                 "💼 Portfolio",
@@ -99,6 +159,7 @@ def get_main_menu_keyboard():
                 callback_data="signal_history"
             )
         ],
+
         [
             InlineKeyboardButton(
                 "⭐ Favorites",
@@ -109,6 +170,7 @@ def get_main_menu_keyboard():
                 callback_data="premium"
             )
         ],
+
         [
             InlineKeyboardButton(
                 "👤 Profile",
@@ -119,6 +181,7 @@ def get_main_menu_keyboard():
                 callback_data="settings"
             )
         ],
+
         [
             InlineKeyboardButton(
                 "❓ Support",
@@ -130,8 +193,10 @@ def get_main_menu_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
+
 def get_back_home_keyboard(refresh_data=None):
-    row = [
+
+    buttons = [
         InlineKeyboardButton(
             "🏠 Home",
             callback_data="main_menu"
@@ -143,17 +208,19 @@ def get_back_home_keyboard(refresh_data=None):
     ]
 
     if refresh_data:
-        row.append(
+        buttons.append(
             InlineKeyboardButton(
                 "🔄 Refresh",
                 callback_data=refresh_data
             )
         )
 
-    return InlineKeyboardMarkup([row])
+    return InlineKeyboardMarkup([buttons])
+
 
 
 def get_admin_keyboard():
+
     keyboard = [
         [
             InlineKeyboardButton(
