@@ -18,7 +18,11 @@ from app.services.ai_provider import ai_provider
 logger = logging.getLogger(__name__)
 
 
-async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+async def start_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
 
     welcome_message = (
         "🤖 Welcome to Selina AI Trading Bot!\n\n"
@@ -29,15 +33,20 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Select an option below:"
     )
 
+
     keyboard = get_main_menu_keyboard()
 
+
     if update.message:
+
         await update.message.reply_text(
             welcome_message,
             reply_markup=keyboard
         )
 
+
     elif update.callback_query:
+
         await update.callback_query.edit_message_text(
             welcome_message,
             reply_markup=keyboard
@@ -45,7 +54,11 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
-async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+async def admin_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
 
     await update.message.reply_text(
         "🛠️ Admin Dashboard\n\n"
@@ -55,89 +68,104 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+
+async def button_handler(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
 
     query = update.callback_query
+
     await query.answer()
 
     data = query.data
 
 
+
     if data == "main_menu":
 
-        await start_command(update, context)
+        await start_command(
+            update,
+            context
+        )
 
 
 
-   # LIVE SIGNALS
-elif data == "live_signals":
+    elif data == "live_signals":
 
-    await query.edit_message_text(
-        "📈 Live Signals\n\n"
-        "⏳ Scanning forex markets...\n\n"
-        "🔎 EUR/USD\n"
-        "🔎 GBP/USD\n"
-        "🔎 USD/JPY"
-    )
-
-
-    pairs = [
-        "EUR/USD",
-        "GBP/USD",
-        "USD/JPY"
-    ]
+        await query.edit_message_text(
+            "📈 Live Signals\n\n"
+            "⏳ Scanning forex markets...\n\n"
+            "🔎 EUR/USD\n"
+            "🔎 GBP/USD\n"
+            "🔎 USD/JPY"
+        )
 
 
-    results = []
+        pairs = [
+            "EUR/USD",
+            "GBP/USD",
+            "USD/JPY"
+        ]
 
 
-    for pair in pairs:
-
-        try:
-
-            market_data = {
-                "pair": pair,
-                "timeframe": "H1",
-                "indicators": [
-                    "RSI",
-                    "MACD",
-                    "EMA",
-                    "Support Resistance"
-                ]
-            }
+        results = []
 
 
-            analysis = await ai_provider.analyze_market_groq(
-                market_data,
-                "H1"
-            )
+        for pair in pairs:
+
+            try:
+
+                market_data = {
+                    "pair": pair,
+                    "timeframe": "H1",
+                    "indicators": [
+                        "RSI",
+                        "MACD",
+                        "EMA",
+                        "Support Resistance"
+                    ]
+                }
 
 
-            results.append(
-                f"📊 {pair}\n\n{analysis}"
-            )
+                analysis = await ai_provider.analyze_market_groq(
+                    market_data,
+                    "H1"
+                )
 
 
-        except Exception as e:
-
-            logger.error(
-                f"{pair} scan error: {e}"
-            )
-
-            results.append(
-                f"❌ {pair}\nAnalysis failed"
-            )
+                results.append(
+                    f"📊 {pair}\n\n{analysis}"
+                )
 
 
-    final_message = (
-        "📈 Live AI Trading Signals\n\n"
-        + "\n\n━━━━━━━━━━━━━━\n\n".join(results)
-    )
+            except Exception as e:
+
+                logger.error(
+                    f"{pair} scan error: {e}"
+                )
 
 
-    await query.edit_message_text(
-        final_message
-    )
+                results.append(
+                    f"❌ {pair}\nAnalysis failed"
+                )
+
+
+
+        final_message = (
+            "📈 Live AI Trading Signals\n\n"
+            +
+            "\n\n━━━━━━━━━━━━━━\n\n".join(results)
+        )
+
+
+        await query.edit_message_text(
+            final_message,
+            reply_markup=get_back_home_keyboard()
+        )
+
+
 
 
 
@@ -151,9 +179,15 @@ elif data == "live_signals":
 
 
 
+
+
     elif data.startswith("analyze_"):
 
-        pair = data.replace("analyze_", "")
+        pair = data.replace(
+            "analyze_",
+            ""
+        )
+
 
         await query.edit_message_text(
             f"🧠 AI Analysis\n\n"
@@ -163,8 +197,11 @@ elif data == "live_signals":
 
 
         market_data = {
+
             "pair": pair,
+
             "timeframe": "H1",
+
             "indicators": [
                 "RSI",
                 "MACD",
@@ -172,6 +209,7 @@ elif data == "live_signals":
                 "Support Resistance"
             ]
         }
+
 
 
         try:
@@ -183,8 +221,10 @@ elif data == "live_signals":
 
 
             await query.edit_message_text(
+
                 f"📊 {pair} AI Signal\n\n"
                 f"{result}",
+
                 reply_markup=get_back_home_keyboard()
             )
 
@@ -195,10 +235,13 @@ elif data == "live_signals":
                 f"AI analysis error: {e}"
             )
 
+
             await query.edit_message_text(
                 "❌ AI analysis failed.",
                 reply_markup=get_back_home_keyboard()
             )
+
+
 
 
 
@@ -215,6 +258,8 @@ elif data == "live_signals":
 
 
 
+
+
     elif data == "forex_news":
 
         await query.edit_message_text(
@@ -222,6 +267,8 @@ elif data == "live_signals":
             "Fetching latest market news...",
             reply_markup=get_back_home_keyboard()
         )
+
+
 
 
 
@@ -237,6 +284,8 @@ elif data == "live_signals":
 
 
 
+
+
     elif data == "economic_calendar":
 
         await query.edit_message_text(
@@ -244,6 +293,8 @@ elif data == "live_signals":
             "Loading economic events...",
             reply_markup=get_back_home_keyboard()
         )
+
+
 
 
 
@@ -257,6 +308,8 @@ elif data == "live_signals":
 
 
 
+
+
     elif data == "signal_history":
 
         await query.edit_message_text(
@@ -264,6 +317,8 @@ elif data == "live_signals":
             "No previous signals.",
             reply_markup=get_back_home_keyboard()
         )
+
+
 
 
 
@@ -277,9 +332,12 @@ elif data == "live_signals":
 
 
 
+
+
     elif data == "profile":
 
         user = update.effective_user
+
 
         await query.edit_message_text(
             "👤 Profile\n\n"
@@ -288,6 +346,8 @@ elif data == "live_signals":
             f"ID: {user.id}",
             reply_markup=get_back_home_keyboard()
         )
+
+
 
 
 
@@ -301,6 +361,8 @@ elif data == "live_signals":
 
 
 
+
+
     elif data == "support":
 
         await query.edit_message_text(
@@ -308,6 +370,8 @@ elif data == "live_signals":
             "Contact: @your_support",
             reply_markup=get_back_home_keyboard()
         )
+
+
 
 
 
@@ -321,6 +385,8 @@ elif data == "live_signals":
 
 
 
+
+
     elif data.startswith("buy_"):
 
         plan = data.split("_")[1]
@@ -330,9 +396,12 @@ elif data == "live_signals":
 
         try:
 
-            payment_url = payment_service.create_stripe_checkout_session(
-                user_id=user_id,
-                plan=plan
+            payment_url = (
+                payment_service
+                .create_stripe_checkout_session(
+                    user_id=user_id,
+                    plan=plan
+                )
             )
 
 
@@ -347,6 +416,7 @@ elif data == "live_signals":
                     )
                 )
 
+
             else:
 
                 await query.edit_message_text(
@@ -360,15 +430,23 @@ elif data == "live_signals":
                 f"Payment error: {e}"
             )
 
+
             await query.edit_message_text(
                 "❌ Payment failed."
             )
 
 
 
+
+
     elif data == "back":
 
-        await start_command(update, context)
+        await start_command(
+            update,
+            context
+        )
+
+
 
 
 
@@ -377,6 +455,7 @@ elif data == "live_signals":
         logger.warning(
             f"Unknown callback: {data}"
         )
+
 
         await query.edit_message_text(
             "❌ Unknown action.",
