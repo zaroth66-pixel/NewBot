@@ -1,5 +1,4 @@
 import logging
-
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -14,29 +13,19 @@ from app.bot.handlers import (
 )
 
 
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO
-)
-
 logger = logging.getLogger(__name__)
-
-
-bot_application = None
 
 
 def create_bot_app():
 
-    global bot_application
-
     if not settings.TELEGRAM_BOT_TOKEN:
         logger.warning(
-            "TELEGRAM_BOT_TOKEN is not set. Bot will not start."
+            "TELEGRAM_BOT_TOKEN is missing"
         )
         return None
 
 
-    bot_application = (
+    application = (
         Application
         .builder()
         .token(settings.TELEGRAM_BOT_TOKEN)
@@ -44,8 +33,7 @@ def create_bot_app():
     )
 
 
-    # Commands
-    bot_application.add_handler(
+    application.add_handler(
         CommandHandler(
             "start",
             start_command
@@ -53,7 +41,7 @@ def create_bot_app():
     )
 
 
-    bot_application.add_handler(
+    application.add_handler(
         CommandHandler(
             "admin",
             admin_command
@@ -61,65 +49,35 @@ def create_bot_app():
     )
 
 
-    # Inline buttons
-    bot_application.add_handler(
+    application.add_handler(
         CallbackQueryHandler(
             button_handler
         )
     )
 
 
-    return bot_application
+    return application
 
 
 
-async def start_bot():
+async def run_bot():
 
-    app = create_bot_app()
+    application = create_bot_app()
 
-    if not app:
-        return
-
-
-    logger.info(
-        "Starting Telegram Bot"
-    )
-
-
-    await app.initialize()
-
-    await app.start()
-
-    await app.updater.start_polling(
-        drop_pending_updates=True
-    )
-
-
-    logger.info(
-        "Telegram Bot started successfully"
-    )
-
-
-
-async def stop_bot():
-
-    global bot_application
-
-
-    if bot_application:
+    if application:
 
         logger.info(
-            "Stopping Telegram Bot"
+            "Starting Telegram Bot"
         )
 
 
-        await bot_application.updater.stop()
+        await application.initialize()
 
-        await bot_application.stop()
+        await application.start()
 
-        await bot_application.shutdown()
+        await application.updater.start_polling()
 
 
         logger.info(
-            "Telegram Bot stopped"
+            "Telegram Bot started"
         )
