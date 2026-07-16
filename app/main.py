@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.db.session import get_db
 from app.api.webhooks import router as webhooks_router
-
+from app.scheduler import start_scheduler
 import logging
 
 logger = logging.getLogger(__name__)
