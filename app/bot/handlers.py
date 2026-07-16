@@ -18,6 +18,28 @@ from app.services.ai_provider import ai_provider
 logger = logging.getLogger(__name__)
 
 
+async def send_long_message(message, text, reply_markup=None):
+    """
+    Telegram max message length = 4096 characters
+    Split long AI responses safely
+    """
+
+    chunks = [
+        text[i:i + 4000]
+        for i in range(0, len(text), 4000)
+    ]
+
+    for index, chunk in enumerate(chunks):
+
+        if index == 0:
+            await message.reply_text(
+                chunk,
+                reply_markup=reply_markup
+            )
+        else:
+            await message.reply_text(chunk)
+
+
 
 async def start_command(
     update: Update,
@@ -51,6 +73,7 @@ async def start_command(
             welcome_message,
             reply_markup=keyboard
         )
+
 
 
 
@@ -94,12 +117,13 @@ async def button_handler(
 
     elif data == "live_signals":
 
+
         await query.edit_message_text(
             "📈 Live Signals\n\n"
-            "⏳ Scanning forex markets...\n\n"
-            "🔎 EUR/USD\n"
-            "🔎 GBP/USD\n"
-            "🔎 USD/JPY"
+            "⏳ Fetching latest AI trading signals...\n\n"
+            "Scanning EUR/USD\n"
+            "Scanning GBP/USD\n"
+            "Scanning USD/JPY"
         )
 
 
@@ -110,60 +134,79 @@ async def button_handler(
         ]
 
 
-        results = []
-
-
         for pair in pairs:
+
 
             try:
 
+
                 market_data = {
+
                     "pair": pair,
+
                     "timeframe": "H1",
+
                     "indicators": [
+
                         "RSI",
+
                         "MACD",
+
                         "EMA",
+
                         "Support Resistance"
+
                     ]
+
                 }
 
 
+
                 analysis = await ai_provider.analyze_market_groq(
+
                     market_data,
+
                     "H1"
+
                 )
 
 
-                results.append(
-                    f"📊 {pair}\n\n{analysis}"
+
+                response = (
+
+                    f"📊 {pair} AI Signal\n\n"
+
+                    f"{analysis}"
+
                 )
+
+
+
+                await send_long_message(
+
+                    query.message,
+
+                    response
+
+                )
+
 
 
             except Exception as e:
 
+
                 logger.error(
+
                     f"{pair} scan error: {e}"
+
                 )
 
 
-                results.append(
+                await query.message.reply_text(
+
                     f"❌ {pair}\nAnalysis failed"
+
                 )
-
-
-
-        final_message = (
-            "📈 Live AI Trading Signals\n\n"
-            +
-            "\n\n━━━━━━━━━━━━━━\n\n".join(results)
-        )
-
-
-        await query.edit_message_text(
-            final_message,
-            reply_markup=get_back_home_keyboard()
-        )
 
 
 
@@ -171,10 +214,15 @@ async def button_handler(
 
     elif data == "ai_analysis":
 
+
         await query.edit_message_text(
+
             "🧠 AI Analysis\n\n"
+
             "Select currency pair:",
+
             reply_markup=get_currency_pairs_keyboard()
+
         )
 
 
@@ -183,62 +231,95 @@ async def button_handler(
 
     elif data.startswith("analyze_"):
 
+
         pair = data.replace(
+
             "analyze_",
+
             ""
+
         )
+
 
 
         await query.edit_message_text(
+
             f"🧠 AI Analysis\n\n"
+
             f"Pair: {pair}\n\n"
+
             "⏳ AI is analyzing market data..."
+
         )
+
 
 
         market_data = {
 
+
             "pair": pair,
+
 
             "timeframe": "H1",
 
+
             "indicators": [
+
                 "RSI",
+
                 "MACD",
+
                 "EMA",
+
                 "Support Resistance"
+
             ]
+
         }
 
 
 
         try:
 
+
             result = await ai_provider.analyze_market_groq(
+
                 market_data,
+
                 "H1"
+
             )
 
 
-            await query.edit_message_text(
 
-                f"📊 {pair} AI Signal\n\n"
-                f"{result}",
+            await send_long_message(
 
-                reply_markup=get_back_home_keyboard()
+                query.message,
+
+                f"📊 {pair} AI Signal\n\n{result}",
+
+                get_back_home_keyboard()
+
             )
+
 
 
         except Exception as e:
 
+
             logger.error(
+
                 f"AI analysis error: {e}"
+
             )
 
 
             await query.edit_message_text(
+
                 "❌ AI analysis failed.",
+
                 reply_markup=get_back_home_keyboard()
+
             )
 
 
@@ -247,13 +328,21 @@ async def button_handler(
 
     elif data == "market_scanner":
 
+
         await query.edit_message_text(
+
             "🔍 Market Scanner\n\n"
+
             "⏳ Scanning global forex market...\n\n"
+
             "EUR/USD ✅\n"
+
             "GBP/USD ✅\n"
+
             "USD/JPY ✅",
+
             reply_markup=get_back_home_keyboard()
+
         )
 
 
@@ -262,10 +351,15 @@ async def button_handler(
 
     elif data == "forex_news":
 
+
         await query.edit_message_text(
+
             "📰 Forex News\n\n"
+
             "Fetching latest market news...",
+
             reply_markup=get_back_home_keyboard()
+
         )
 
 
@@ -274,12 +368,19 @@ async def button_handler(
 
     elif data == "trading_sessions":
 
+
         await query.edit_message_text(
+
             "🕒 Trading Sessions\n\n"
+
             "🌏 Asian Session\n"
+
             "🇬🇧 London Session\n"
+
             "🇺🇸 New York Session",
+
             reply_markup=get_back_home_keyboard()
+
         )
 
 
@@ -288,10 +389,15 @@ async def button_handler(
 
     elif data == "economic_calendar":
 
+
         await query.edit_message_text(
+
             "📅 Economic Calendar\n\n"
+
             "Loading economic events...",
+
             reply_markup=get_back_home_keyboard()
+
         )
 
 
@@ -300,10 +406,15 @@ async def button_handler(
 
     elif data == "portfolio":
 
+
         await query.edit_message_text(
+
             "💼 Portfolio\n\n"
+
             "No active trades yet.",
+
             reply_markup=get_back_home_keyboard()
+
         )
 
 
@@ -312,10 +423,15 @@ async def button_handler(
 
     elif data == "signal_history":
 
+
         await query.edit_message_text(
+
             "📜 Signal History\n\n"
+
             "No previous signals.",
+
             reply_markup=get_back_home_keyboard()
+
         )
 
 
@@ -324,10 +440,15 @@ async def button_handler(
 
     elif data == "favorites":
 
+
         await query.edit_message_text(
+
             "⭐ Favorites\n\n"
+
             "No favorite pairs saved.",
+
             reply_markup=get_back_home_keyboard()
+
         )
 
 
@@ -336,15 +457,22 @@ async def button_handler(
 
     elif data == "profile":
 
+
         user = update.effective_user
 
 
         await query.edit_message_text(
+
             "👤 Profile\n\n"
+
             f"Name: {user.first_name}\n"
+
             f"Username: @{user.username}\n"
+
             f"ID: {user.id}",
+
             reply_markup=get_back_home_keyboard()
+
         )
 
 
@@ -353,10 +481,15 @@ async def button_handler(
 
     elif data == "settings":
 
+
         await query.edit_message_text(
+
             "⚙️ Settings\n\n"
+
             "Notification settings coming soon.",
+
             reply_markup=get_back_home_keyboard()
+
         )
 
 
@@ -365,10 +498,15 @@ async def button_handler(
 
     elif data == "support":
 
+
         await query.edit_message_text(
+
             "❓ Support\n\n"
+
             "Contact: @your_support",
+
             reply_markup=get_back_home_keyboard()
+
         )
 
 
@@ -377,10 +515,15 @@ async def button_handler(
 
     elif data == "premium":
 
+
         await query.edit_message_text(
+
             "💎 Premium Plans\n\n"
+
             "Choose your subscription:",
+
             reply_markup=get_premium_plans_keyboard()
+
         )
 
 
@@ -389,50 +532,72 @@ async def button_handler(
 
     elif data.startswith("buy_"):
 
+
         plan = data.split("_")[1]
+
 
         user_id = update.effective_user.id
 
 
+
         try:
 
-            payment_url = (
-                payment_service
-                .create_stripe_checkout_session(
-                    user_id=user_id,
-                    plan=plan
-                )
+
+            payment_url = payment_service.create_stripe_checkout_session(
+
+                user_id=user_id,
+
+                plan=plan
+
             )
+
 
 
             if payment_url:
 
+
                 await query.edit_message_text(
+
                     f"💎 Selected Plan: {plan}\n\n"
+
                     "Complete payment:",
+
                     reply_markup=get_payment_methods_keyboard(
+
                         plan,
+
                         payment_url
+
                     )
+
                 )
 
 
             else:
 
+
                 await query.edit_message_text(
+
                     "❌ Payment service unavailable."
+
                 )
+
 
 
         except Exception as e:
 
+
             logger.error(
+
                 f"Payment error: {e}"
+
             )
 
 
             await query.edit_message_text(
+
                 "❌ Payment failed."
+
             )
 
 
@@ -441,9 +606,13 @@ async def button_handler(
 
     elif data == "back":
 
+
         await start_command(
+
             update,
+
             context
+
         )
 
 
@@ -452,12 +621,18 @@ async def button_handler(
 
     else:
 
+
         logger.warning(
+
             f"Unknown callback: {data}"
+
         )
 
 
         await query.edit_message_text(
+
             "❌ Unknown action.",
+
             reply_markup=get_back_home_keyboard()
+
         )
