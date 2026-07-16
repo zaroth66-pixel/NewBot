@@ -1,26 +1,61 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.core.config import settings
-from app.db.session import get_db
 from app.api.webhooks import router as webhooks_router
 from app.scheduler import start_scheduler, stop_scheduler
 
+from app.bot import create_bot_app
+
+import asyncio
 import logging
 
 logger = logging.getLogger(__name__)
 
+telegram_bot = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global telegram_bot
+
     # Startup
     logger.info("Starting up FastAPI application")
 
+    # Start scheduler
     start_scheduler()
+
+    # Start Telegram bot
+    telegram_bot = create_bot_app()
+
+    if telegram_bot:
+        try:
+            await telegram_bot.initialize()
+            await telegram_bot.start()
+
+            asyncio.create_task(
+                telegram_bot.updater.start_polling()
+            )
+
+            logger.info("Telegram bot started")
+
+        except Exception as e:
+            logger.error(f"Telegram bot startup failed: {e}")
 
     yield
 
     # Shutdown
     logger.info("Shutting down FastAPI application")
+
+    if telegram_bot:
+        try:
+            await telegram_bot.updater.stop()
+            await telegram_bot.stop()
+            await telegram_bot.shutdown()
+
+            logger.info("Telegram bot stopped")
+
+        except Exception as e:
+            logger.error(f"Telegram bot shutdown error: {e}")
 
     stop_scheduler()
 
@@ -54,12 +89,9 @@ async def health_check():
     }
 
 
-# Telegram webhook endpoint
 @app.post("/webhook")
 async def telegram_webhook(data: dict):
     logger.info(f"Received webhook data: {data}")
-
-    # Telegram bot webhook handler integration goes here
 
     return {
         "status": "ok"
