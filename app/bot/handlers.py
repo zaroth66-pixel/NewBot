@@ -6,10 +6,12 @@ from app.bot.keyboards import (
     get_main_menu_keyboard,
     get_admin_keyboard,
     get_premium_plans_keyboard,
-    get_payment_methods_keyboard
+    get_payment_methods_keyboard,
+    get_currency_pairs_keyboard
 )
 
 from app.services.payment import payment_service
+from app.services.ai_provider import ai_provider
 
 
 logger = logging.getLogger(__name__)
@@ -40,6 +42,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+
 async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     message = (
@@ -47,12 +50,11 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Select management option:"
     )
 
-    keyboard = get_admin_keyboard()
-
     await update.message.reply_text(
         message,
-        reply_markup=keyboard
+        reply_markup=get_admin_keyboard()
     )
+
 
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -64,30 +66,92 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = query.data
 
 
+    # HOME
     if data == "main_menu":
 
         await start_command(update, context)
 
 
+
+    # LIVE SIGNALS
     elif data == "live_signals":
 
         await query.edit_message_text(
             "📈 Live Signals\n\n"
-            "Fetching latest trading signals..."
+            "⏳ Fetching latest AI trading signals..."
         )
 
 
+
+    # AI MENU
     elif data == "ai_analysis":
 
         await query.edit_message_text(
             "🧠 AI Analysis\n\n"
-            "Select currency pair:\n\n"
-            "EUR/USD\n"
-            "GBP/USD\n"
-            "USD/JPY"
+            "Select currency pair:",
+            reply_markup=get_currency_pairs_keyboard()
         )
 
 
+
+    # AI ANALYSIS REQUEST
+    elif data.startswith("analyze_"):
+
+        pair = data.replace(
+            "analyze_",
+            ""
+        )
+
+        await query.edit_message_text(
+            f"🧠 AI Analysis\n\n"
+            f"Analyzing {pair}...\n\n"
+            "⏳ Please wait..."
+        )
+
+
+        market_data = {
+
+            "pair": pair,
+
+            "timeframe": "H1",
+
+            "indicators": [
+                "RSI",
+                "MACD",
+                "EMA",
+                "Support Resistance"
+            ]
+
+        }
+
+
+        try:
+
+            result = await ai_provider.analyze_market_groq(
+                market_data,
+                "H1"
+            )
+
+
+            await query.message.reply_text(
+                f"📊 {pair} AI Signal\n\n"
+                f"{result}"
+            )
+
+
+        except Exception as e:
+
+            logger.error(
+                f"AI analysis error: {e}"
+            )
+
+            await query.message.reply_text(
+                "❌ AI analysis failed."
+            )
+
+
+
+    # MARKET SCANNER
     elif data == "market_scanner":
 
         await query.edit_message_text(
@@ -96,6 +160,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+
+    # NEWS
     elif data == "forex_news":
 
         await query.edit_message_text(
@@ -104,6 +170,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+
+    # SESSIONS
     elif data == "trading_sessions":
 
         await query.edit_message_text(
@@ -114,6 +182,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+
+    # CALENDAR
     elif data == "economic_calendar":
 
         await query.edit_message_text(
@@ -122,6 +192,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+
+    # PORTFOLIO
     elif data == "portfolio":
 
         await query.edit_message_text(
@@ -130,6 +202,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+
+    # HISTORY
     elif data == "signal_history":
 
         await query.edit_message_text(
@@ -138,6 +212,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+
+    # FAVORITES
     elif data == "favorites":
 
         await query.edit_message_text(
@@ -146,6 +222,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+
+    # PROFILE
     elif data == "profile":
 
         user = update.effective_user
@@ -158,6 +236,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+
+    # SETTINGS
     elif data == "settings":
 
         await query.edit_message_text(
@@ -166,6 +246,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+
+    # SUPPORT
     elif data == "support":
 
         await query.edit_message_text(
@@ -174,6 +256,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+
+    # PREMIUM
     elif data == "premium":
 
         await query.edit_message_text(
@@ -183,11 +267,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+
+    # PAYMENT
     elif data.startswith("buy_"):
 
         plan = data.split("_")[1]
 
         user_id = update.effective_user.id
+
 
         payment_url = payment_service.create_stripe_checkout_session(
             user_id=user_id,
@@ -213,9 +300,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
 
+
+    # BACK
     elif data == "back":
 
-        await start_command(update, context)
+        await start_command(
+            update,
+            context
+        )
+
 
 
     else:
