@@ -25,4 +25,3 @@ python-dotenv==1.0.1
 stripe==8.8.0
 paypalrestsdk==1.13.1
 pandas==2.2.1
-pandas-ta==0.4.67b0
