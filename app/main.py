@@ -3,19 +3,27 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.db.session import get_db
 from app.api.webhooks import router as webhooks_router
-from app.scheduler import start_scheduler
+from app.scheduler import start_scheduler, stop_scheduler
+
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting up FastAPI application")
+
     start_scheduler()
+
     yield
+
     # Shutdown
     logger.info("Shutting down FastAPI application")
+
+    stop_scheduler()
+
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -24,19 +32,35 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-app.include_router(webhooks_router, prefix="/api/webhooks", tags=["webhooks"])
+
+app.include_router(
+    webhooks_router,
+    prefix="/api/webhooks",
+    tags=["webhooks"]
+)
+
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to AI Forex Bot API"}
+    return {
+        "message": "Welcome to AI Forex Bot API"
+    }
+
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return {
+        "status": "healthy"
+    }
 
-# Webhook endpoint for Telegram (if not using polling)
+
+# Telegram webhook endpoint
 @app.post("/webhook")
 async def telegram_webhook(data: dict):
     logger.info(f"Received webhook data: {data}")
-    # Integration with telegram-python-bot webhook handler goes here
-    return {"status": "ok"}
+
+    # Telegram bot webhook handler integration goes here
+
+    return {
+        "status": "ok"
+    }
