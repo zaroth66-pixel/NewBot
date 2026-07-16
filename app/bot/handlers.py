@@ -69,16 +69,75 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
-    elif data == "live_signals":
+   # LIVE SIGNALS
+elif data == "live_signals":
 
-        await query.edit_message_text(
-            "📈 Live Signals\n\n"
-            "⏳ Fetching latest AI trading signals...\n\n"
-            "Scanning EUR/USD\n"
-            "Scanning GBP/USD\n"
-            "Scanning USD/JPY",
-            reply_markup=get_back_home_keyboard()
-        )
+    await query.edit_message_text(
+        "📈 Live Signals\n\n"
+        "⏳ Scanning forex markets...\n\n"
+        "🔎 EUR/USD\n"
+        "🔎 GBP/USD\n"
+        "🔎 USD/JPY"
+    )
+
+
+    pairs = [
+        "EUR/USD",
+        "GBP/USD",
+        "USD/JPY"
+    ]
+
+
+    results = []
+
+
+    for pair in pairs:
+
+        try:
+
+            market_data = {
+                "pair": pair,
+                "timeframe": "H1",
+                "indicators": [
+                    "RSI",
+                    "MACD",
+                    "EMA",
+                    "Support Resistance"
+                ]
+            }
+
+
+            analysis = await ai_provider.analyze_market_groq(
+                market_data,
+                "H1"
+            )
+
+
+            results.append(
+                f"📊 {pair}\n\n{analysis}"
+            )
+
+
+        except Exception as e:
+
+            logger.error(
+                f"{pair} scan error: {e}"
+            )
+
+            results.append(
+                f"❌ {pair}\nAnalysis failed"
+            )
+
+
+    final_message = (
+        "📈 Live AI Trading Signals\n\n"
+        + "\n\n━━━━━━━━━━━━━━\n\n".join(results)
+    )
+
+
+    await query.edit_message_text(
+        final_message
+    )
 
 
 
