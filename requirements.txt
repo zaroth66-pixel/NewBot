@@ -34,6 +34,8 @@ paypalrestsdk==1.13.1
 
 numpy==1.26.4
 pandas==2.2.3
-
+pandas-ta-classic
 pytest==8.1.1
+
+
 pytest-asyncio==0.23.6
